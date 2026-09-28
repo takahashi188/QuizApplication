@@ -132,12 +132,6 @@ export const useQuizStore = defineStore("quizStore", () => {
 
   // 問題の配列の設定
   const setQuizList = () => {
-    // quizList.value = getRandomElements(quizes, numberOfQuiz.value).map(
-    //   quiz => ({
-    //     ...quiz,
-    //     options: getRandomElements(quiz.options, quiz.options.length),
-    //   }),
-    // );
     quizList.value = shuffle(quizes)
       .splice(0, numberOfQuiz.value)
       .map((quiz) => ({
