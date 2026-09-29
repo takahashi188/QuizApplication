@@ -13,6 +13,7 @@ const quizNumber = ref<number>(0);
 const showHistoryModal = ref<boolean>(false);
 const answerHistory = ref<AnswerHistory>();
 const count = ref<number>(0);
+const selectedCategory = ref<number>(quizStore.categoryNumber);
 
 const goQuiz = () => {
   error.value = "";
@@ -22,7 +23,12 @@ const goQuiz = () => {
     return;
   }
 
-  quizStore.startGame(quizNumber.value);
+  if (selectedCategory.value === 0) {
+    error.value = "ジャンルを選択してください";
+    return;
+  }
+
+  quizStore.startGame(quizNumber.value, selectedCategory.value);
   router.push({ name: "Quiz" });
 };
 
@@ -56,6 +62,19 @@ const closeHistoryModal = () => {
 <template>
   <div class="quiz-home">
     <QuizHeader />
+
+    <div class="category-select">
+      <label>ジャンルを選択してください</label>
+      <select v-model="selectedCategory">
+        <option
+          v-for="category in quizStore.categories"
+          :key="category.id"
+          :value="category.id"
+        >
+          {{ category.name }}
+        </option>
+      </select>
+    </div>
 
     <p>出題数を選択してください</p>
 
@@ -260,5 +279,40 @@ const closeHistoryModal = () => {
   height: 100%;
   background-color: #3b82f6;
   transition: width 0.3s ease;
+}
+
+.category-select {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-select label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.category-select select {
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 2px solid #d0d7de;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #333;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.category-select select:hover {
+  border-color: #4f8cff;
+}
+
+.category-select select:focus {
+  outline: none;
+  border-color: #4f8cff;
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.2);
 }
 </style>

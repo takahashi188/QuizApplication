@@ -1,9 +1,10 @@
 import { defineStore } from "pinia";
-import type { AnswerHistory, Option, Quiz } from "./quiz";
+import type { AnswerHistory, Category, Option, Quiz } from "./quiz";
 import { ref, computed, watch } from "vue";
-import { quizes } from "./quizList";
+// import { quizzes } from "./quizList";
 import type { Answer } from "./quiz";
 import router from "@/router";
+import { categories } from "./category";
 
 export const useQuizStore = defineStore("quizStore", () => {
   const count = ref<number>(0);
@@ -11,6 +12,7 @@ export const useQuizStore = defineStore("quizStore", () => {
   const answers = ref<Answer[]>([]);
   const numberOfQuiz = ref<number>(0);
   const answerHistory = ref<AnswerHistory[]>([]);
+  const categoryNumber = ref<number>(0);
 
   const unansweredId = 0;
   const timeoutTime = 5000;
@@ -130,10 +132,19 @@ export const useQuizStore = defineStore("quizStore", () => {
     numberOfQuiz.value = number;
   };
 
+  // ジャンルの設定
+  const setCategoryNumber = (number: number) => {
+    categoryNumber.value = number;
+  };
+
   // 問題の配列の設定
   const setQuizList = () => {
-    quizList.value = shuffle(quizes)
-      .splice(0, numberOfQuiz.value)
+    const selectedQuizList =
+      categories.find((category) => categoryNumber.value === category.id)
+        ?.quizList ?? [];
+
+    quizList.value = shuffle(selectedQuizList)
+      .slice(0, numberOfQuiz.value)
       .map((quiz) => ({
         ...quiz,
         options: shuffle(quiz.options),
@@ -141,10 +152,11 @@ export const useQuizStore = defineStore("quizStore", () => {
   };
 
   // クイズを最初に始める際の処理
-  const startGame = (number: number) => {
+  const startGame = (numberOfQuiz: number, category: number) => {
     resetCount();
     resetAnswer();
-    setNumberOfQuiz(number);
+    setNumberOfQuiz(numberOfQuiz);
+    setCategoryNumber(category);
     setQuizList();
   };
 
@@ -210,6 +222,7 @@ export const useQuizStore = defineStore("quizStore", () => {
   };
 
   return {
+    categories,
     quizList,
     count,
     numberOfQuiz,
@@ -222,6 +235,7 @@ export const useQuizStore = defineStore("quizStore", () => {
     remainMs,
     remainSeconds,
     timeoutTime,
+    categoryNumber,
     answer,
     startGame,
     reStartGame,

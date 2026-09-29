@@ -21,3 +21,9 @@ export interface AnswerHistory {
     correctRate: number;
     answerDate: Date;
 }
+
+export interface Category {
+    id: number;
+    name: string;
+    quizList: Quiz[];
+}
