@@ -37,6 +37,7 @@ const backHome = () => {
   </div>
 
   <div v-else>
+    <p>問題を取得できませんでした</p>
     <button class="home-button" @click="backHome">ホームへ</button>
   </div>
 </template>
