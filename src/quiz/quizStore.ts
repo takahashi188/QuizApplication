@@ -1,10 +1,29 @@
 import { defineStore } from "pinia";
-import type { AnswerHistory, Category, Option, Quiz } from "./quiz";
+import type {
+  AnswerHistory,
+  Category,
+  Option,
+  Quiz,
+  RankingRequest,
+  RankingResponse,
+} from "./quiz";
 import { ref, computed, watch } from "vue";
 // import { quizzes } from "./quizList";
 import type { Answer } from "./quiz";
 import router from "@/router";
 import { categories } from "./category";
+import {
+  doc,
+  addDoc,
+  collection,
+  query,
+  getDocs,
+  orderBy,
+  limit,
+  where,
+  documentId,
+} from "firebase/firestore";
+import { db } from "@/firebase";
 
 export const useQuizStore = defineStore("quizStore", () => {
   const count = ref<number>(0);
@@ -13,7 +32,11 @@ export const useQuizStore = defineStore("quizStore", () => {
   const numberOfQuiz = ref<number>(0);
   const answerHistory = ref<AnswerHistory[]>([]);
   const categoryNumber = ref<number>(0);
+  const userName = ref<string>("");
+  const ranking = ref<RankingResponse[]>([]);
+  const rankingDataId = ref<string>("");
 
+  const numberOfQuizzes = [5, 10, 15, 20];
   const unansweredId = 0;
   const timeoutTime = 5000;
   const intervalTime = 100;
@@ -48,10 +71,11 @@ export const useQuizStore = defineStore("quizStore", () => {
   });
 
   // 回答完了フラグを監視
-  watch(isFinished, () => {
+  watch(isFinished, async () => {
     // 回答の配列が初期化されていないときに結果の画面へ
     if (isFinished.value && answers.value.length !== 0) {
       setAnswerHistory();
+      await addRanking();
       router.push({ name: "Result" });
     }
   });
@@ -107,6 +131,10 @@ export const useQuizStore = defineStore("quizStore", () => {
     }
 
     answers.value.push({ quiz: quizData, answerId: answerId });
+
+    if (answers.value.length === quizList.value.length) {
+      return;
+    }
     count.value++;
   };
 
@@ -137,6 +165,10 @@ export const useQuizStore = defineStore("quizStore", () => {
     categoryNumber.value = number;
   };
 
+  const setUserName = (name: string) => {
+    userName.value = name === "" ? "名無し" : name;
+  };
+
   // 問題の配列の設定
   const setQuizList = () => {
     const selectedQuizList =
@@ -152,11 +184,12 @@ export const useQuizStore = defineStore("quizStore", () => {
   };
 
   // クイズを最初に始める際の処理
-  const startGame = (numberOfQuiz: number, category: number) => {
+  const startGame = (numberOfQuiz: number, category: number, name: string) => {
     resetCount();
     resetAnswer();
     setNumberOfQuiz(numberOfQuiz);
     setCategoryNumber(category);
+    setUserName(name);
     setQuizList();
   };
 
@@ -221,6 +254,38 @@ export const useQuizStore = defineStore("quizStore", () => {
     return options.find((option) => id === option.id)!;
   };
 
+  // Firebaseにデータを登録
+  const addRanking = async () => {
+    const docRef = await addDoc(collection(db, "results"), <RankingRequest>{
+      name: userName.value,
+      category: categoryNumber.value,
+      correctRate: correctRate.value,
+      score: score.value,
+      numberOfQuiz: numberOfQuiz.value,
+      answeredDate: new Date(),
+    });
+    rankingDataId.value = docRef.id;
+  };
+
+  // Firebaseからデータを取得
+  const getResults = async (category: number, numberOfQuiz: number) => {
+    const q = query(
+      collection(db, "results"),
+      where("category", "==", category),
+      where("numberOfQuiz", "==", numberOfQuiz),
+      orderBy("correctRate", "desc"),
+      orderBy(documentId(), "asc"),
+      limit(10),
+    );
+
+    const querySnapShot = await getDocs(q);
+
+    ranking.value = querySnapShot.docs.map((document) => ({
+      id: document.id,
+      ...(document.data() as Omit<RankingResponse, "id">),
+    }));
+  };
+
   return {
     categories,
     quizList,
@@ -236,10 +301,15 @@ export const useQuizStore = defineStore("quizStore", () => {
     remainSeconds,
     timeoutTime,
     categoryNumber,
+    userName,
+    numberOfQuizzes,
+    ranking,
+    rankingDataId,
     answer,
     startGame,
     reStartGame,
     setAnswerHistory,
     getOption,
+    getResults,
   };
 });
