@@ -6,6 +6,7 @@ import { ref } from "vue";
 import type { AnswerHistory } from "./quiz.ts";
 import AnswerHistoryList from "./AnswerHistoryList.vue";
 import AnswerHistoryShowModal from "./AnswerHistoryShowModal.vue";
+import RankingModal from "./RankingModal.vue";
 
 const quizStore = useQuizStore();
 const error = ref<string>("");
@@ -14,6 +15,8 @@ const showHistoryModal = ref<boolean>(false);
 const answerHistory = ref<AnswerHistory>();
 const count = ref<number>(0);
 const selectedCategory = ref<number>(quizStore.categoryNumber);
+const name = ref<string>("");
+const showRankingModal = ref<boolean>(false);
 
 const goQuiz = () => {
   error.value = "";
@@ -28,7 +31,7 @@ const goQuiz = () => {
     return;
   }
 
-  quizStore.startGame(quizNumber.value, selectedCategory.value);
+  quizStore.startGame(quizNumber.value, selectedCategory.value, name.value);
   router.push({ name: "Quiz" });
 };
 
@@ -57,11 +60,22 @@ const openHistoryModal = (answer: AnswerHistory, index: number) => {
 const closeHistoryModal = () => {
   showHistoryModal.value = false;
 };
+
+const openRankingModal = () => {
+  showRankingModal.value = true;
+}
+
+const closeRankingModal = () => {
+  showRankingModal.value = false;
+}
 </script>
 
 <template>
   <div class="quiz-home">
     <QuizHeader />
+
+    <label>名前</label>
+    <input type="text" v-model="name">
 
     <div class="category-select">
       <label>ジャンルを選択してください</label>
@@ -80,7 +94,7 @@ const closeHistoryModal = () => {
 
     <div class="quiz-counts">
       <button
-        v-for="count in [5, 10, 15, 20]"
+        v-for="count in quizStore.numberOfQuizzes"
         :key="count"
         class="quiz-count-button"
         :class="{
@@ -97,46 +111,11 @@ const closeHistoryModal = () => {
     </p>
 
     <button class="start-button" @click="goQuiz">START</button>
+
+    <button class="ranking-button" @click="openRankingModal">ランキングを見る</button>
   </div>
 
   <AnswerHistoryList @open="openHistoryModal" />
-  <!-- <div class="history-section">
-    <h3>回答履歴</h3>
-
-    <div
-      v-for="(answerHistory, index) in quizStore.answerHistory"
-      :key="index"
-      class="history-card"
-    >
-      <div class="history-header">
-        <span>{{ index + 1 }}回目</span>
-        <span class="history-rate"
-          >正答率：{{ answerHistory.correctRate }}%</span
-        >
-      </div>
-
-      <p class="history-date">{{ formatDate(answerHistory.answerDate) }}</p>
-      <p class="history-score">
-        {{ answerHistory.score }}/{{ answerHistory.answer.length }}
-      </p>
-
-      <div class="score-bar">
-        <div
-          class="score-bar-fill"
-          :style="{
-            width: `${answerHistory.correctRate}%`,
-          }"
-        ></div>
-      </div>
-
-      <button
-        class="history-button"
-        @click="openHistoryModal(answerHistory, index)"
-      >
-        詳細を見る
-      </button>
-    </div>
-  </div> -->
 
   <div>
     <AnswerHistoryShowModal
@@ -146,6 +125,8 @@ const closeHistoryModal = () => {
       @close="closeHistoryModal"
     />
   </div>
+
+  <RankingModal v-if="showRankingModal" @close="closeRankingModal" />
 </template>
 
 <style scoped>
@@ -314,5 +295,24 @@ const closeHistoryModal = () => {
   outline: none;
   border-color: #4f8cff;
   box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.2);
+}
+
+.ranking-button {
+  background: none;
+  border: none;
+  padding: 0;
+
+  color: #2563eb;
+  font-size: 0.95rem;
+
+  cursor: pointer;
+}
+
+.ranking-button:hover {
+  color: #1d4ed8;
+}
+
+.ranking-button:active {
+  color: #1e40af;
 }
 </style>

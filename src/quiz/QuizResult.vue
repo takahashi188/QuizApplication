@@ -2,8 +2,12 @@
 import router from "@/router";
 import QuizHeader from "./QuizHeader.vue";
 import { useQuizStore } from "./quizStore";
+import { ref } from "vue";
+import RankingModal from "./RankingModal.vue";
 
 const quizStore = useQuizStore();
+
+const showRankingModal = ref<boolean>(false);
 
 // 再度クイズ画面へ
 const startQuiz = () => {
@@ -13,6 +17,14 @@ const startQuiz = () => {
 
 const goHome = () => {
     router.push({name: "Home"});
+}
+
+const openRankingModal = () => {
+  showRankingModal.value = true;
+}
+
+const closeRankingModal = () => {
+  showRankingModal.value = false;
 }
 </script>
 
@@ -27,8 +39,11 @@ const goHome = () => {
     <p class="rate">正答率{{ quizStore.correctRate }}%</p>
 
     <button class="retry-button" @click="startQuiz">もう一度始める</button>
+    <button class="ranking-button" @click="openRankingModal">ランキングを見る</button>
     <button @click="goHome">ホームへ</button>
   </div>
+
+  <RankingModal v-if="showRankingModal" @close="closeRankingModal" />
 </template>
 
 <style scoped>
@@ -66,5 +81,24 @@ const goHome = () => {
   background: #2563eb;
   color: white;
   font-size: 1rem;
+}
+
+.ranking-button {
+  background: none;
+  border: none;
+  padding: 0;
+
+  color: #2563eb;
+  font-size: 0.95rem;
+
+  cursor: pointer;
+}
+
+.ranking-button:hover {
+  color: #1d4ed8;
+}
+
+.ranking-button:active {
+  color: #1e40af;
 }
 </style>
